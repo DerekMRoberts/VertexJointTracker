@@ -44,6 +44,6 @@ DeclareSimpleCommand( hello, PLUGIN_COMPANY, "4.5");
 MStatus hello::doIt( const MArgList& args )
 {
 
-	cout<<"Hello "<<args.asString(0).asChar()<<endl;
+	cout<<"Investigate 311 "<<args.asString(0).asChar()<<endl;
 	return MS::kSuccess;
 }
