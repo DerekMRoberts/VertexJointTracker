@@ -1,0 +1,3 @@
+/Users/derekroberts/devkitBase/devkit/plug-ins/pointOnMeshInfo/build/CMakeFiles/rebuild_cache.dir
+/Users/derekroberts/devkitBase/devkit/plug-ins/pointOnMeshInfo/build/CMakeFiles/edit_cache.dir
+/Users/derekroberts/devkitBase/devkit/plug-ins/pointOnMeshInfo/build/CMakeFiles/pointOnMeshInfo.dir

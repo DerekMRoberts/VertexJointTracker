@@ -1,0 +1,3 @@
+/Users/derekroberts/devkitBase/devkit/plug-ins/circleNode/build/CMakeFiles/rebuild_cache.dir
+/Users/derekroberts/devkitBase/devkit/plug-ins/circleNode/build/CMakeFiles/edit_cache.dir
+/Users/derekroberts/devkitBase/devkit/plug-ins/circleNode/build/CMakeFiles/circleNode.dir
