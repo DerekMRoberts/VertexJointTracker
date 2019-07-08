@@ -118,7 +118,7 @@ MStatus jointCreateCommand::redoIt()
     //Create an IKHandle with a MEL command
     MString endEffectorArgument;
     endEffectorArgument.set(m_jointObjects.size());
-    MString command = "ikHandle -sj joint1 -endEffectorArgument joint" + endEffectorArgument;
+    MString command = "ikHandle -sj joint1 -ee joint" + endEffectorArgument;
     m_dagModifier.commandToExecute(command);
 
     m_dagModifier.doIt();
