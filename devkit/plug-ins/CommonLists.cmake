@@ -97,7 +97,7 @@ if (NOT MAYA_BOLT_VERSION)
 
     add_subdirectory(helixTool)
     add_subdirectory(helloCmd)
-    add_subdirectory(helloWorldCmd)
+    add_subdirectory(helloWorld)
     if (${WantHWrender})
       add_subdirectory(hwRenderPostEffect)
       add_subdirectory(hwPhongShader)
