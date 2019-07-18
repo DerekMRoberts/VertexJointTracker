@@ -1,0 +1,6 @@
+if(objExists("locator*")) {
+    delete("locator*");
+};
+spaceLocator -p 0 0 0;
+spaceLocator -p 0 0 0;
+spaceLocator -p 0 0 0;
