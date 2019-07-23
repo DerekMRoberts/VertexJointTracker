@@ -41,17 +41,25 @@ private:
     MStatus meshBufferOps(unsigned i);
     MStatus vertUpdateByClosest(std::vector<MPoint>& locations);
     MStatus vertUpdateBySelection(std::vector<MPoint>& locations);
+    MPoint getProjectedPoint(unsigned i, MPoint* prevPoint, MPoint* currentPoint);
+    MPoint getAcceleration();
+    MStatus setVelocity(MPoint* prePoint, MPoint* cPoint);
+    MStatus setNextActualPoints();
     unsigned getMeshVertices(MTime& frame);
     unsigned m_vpIndex = 0;
-    double m_startFrame;
-    double m_endFrame;
+    double m_startFrame = 1;
+    double m_endFrame = 50;
     MDGModifier m_dagModifier;
-    std::vector <MPoint> m_referencePoints;
+    std::vector <MPoint> m_prevPoints;
+    std::vector <MPoint> m_projPoints;
+    std::vector <MPoint> m_velocities;
     MAnimControl m_animControl;
     unsigned m_prevMeshVertices;
     unsigned m_currentMeshVertices;
     unsigned m_nextMeshVertices;
-    unsigned m_currentFrame;
+    MTime m_prevFrame;
+    MTime m_currentFrame;
+    MTime m_nextFrame;
     const char *kStartFrame;
     const char *kEndFrame;
     bool isNewMeshNext = false;
@@ -109,12 +117,74 @@ MStatus JointRigAnimateCommand::parseArgs(const MArgList &args)
     return status;
 }
 
+MPoint JointRigAnimateCommand::getAcceleration()
+{
+    MPoint currentAcceleration;
+
+    currentAcceleration = m_velocities[1] - m_velocities[0];
+
+    cout << "Current Acceleration: " << currentAcceleration.x << ", " << currentAcceleration.y << ", "
+        << currentAcceleration.z << endl;
+
+    return currentAcceleration;
+}
+
+MStatus JointRigAnimateCommand::setVelocity(MPoint* prePoint, MPoint* cPoint)
+{
+    MPoint currentVelocity;
+    if(prePoint != NULL && cPoint != NULL)
+    {
+        MPoint currentPoint = *cPoint;
+        MPoint prevPoint = *prePoint;
+
+        currentVelocity = currentPoint - prevPoint;
+
+        if ((int)m_currentFrame.value() % 3 == 0)
+            m_velocities.clear();
+
+        m_velocities.push_back(currentVelocity);
+
+        cout << "Current Velocity: " << currentVelocity.x << ", " << currentVelocity.y << ", " << currentVelocity.z
+            << endl;
+    }
+    return MS::kSuccess;
+}
+
+MPoint JointRigAnimateCommand::getProjectedPoint(unsigned vi, MPoint* prePoint, MPoint* cPoint)
+{
+    MPoint projPoint;
+    int i;
+
+    if(vi == 0)
+       i = 2;
+    else
+        i = 3;
+
+    if(prePoint != NULL && cPoint != NULL)
+    {
+        MPoint currentPoint = *cPoint;
+        MPoint prevPoint = *prePoint;
+        setVelocity(prePoint, cPoint);
+        MPoint currentVelocity = m_velocities[i];
+        MPoint acceleration = getAcceleration();
+
+        projPoint.x = currentPoint.x + currentVelocity.x + (acceleration.x / 2);
+        projPoint.y = currentPoint.y + currentVelocity.y + (acceleration.y / 2);
+        projPoint.z = currentPoint.z + currentVelocity.z + (acceleration.z / 2);
+
+    }
+
+    return projPoint;
+}
+
 MStatus JointRigAnimateCommand::vertUpdateByClosest(std::vector<MPoint>& locations)
 {
+    cout << "\nvertUpdateByClosest() has been called." << endl;
+
     //Get the mesh by selection.
+    MStatus status;
     MDagPath node;
     MObject component;
-    MStatus status;
     MSelectionList meshList;
     MGlobal::selectByName("mesh_fdv");
     MGlobal::getActiveSelectionList(meshList);
@@ -125,6 +195,7 @@ MStatus JointRigAnimateCommand::vertUpdateByClosest(std::vector<MPoint>& locatio
     //m_refrencePoints based on which vertexPair we're
     //working with.
     unsigned p1, p2;
+    unsigned vi = 0;
 
     switch(m_vpIndex) {
         case 0: p1 = 0;
@@ -140,31 +211,105 @@ MStatus JointRigAnimateCommand::vertUpdateByClosest(std::vector<MPoint>& locatio
 
     for(unsigned i = p1; i < p2+1; i++)
     {
-        MPoint temp;
+        MPoint current;
+        MPoint projected;
 
-        //m_referencePoints should hold all 3 vertex pairs.
-        cout << "Reference Point " << i << ": " << m_referencePoints[i].x << ", " << m_referencePoints[i].y << ", "
-             << m_referencePoints[i].z << endl;
+        cout << "m_projPoints size = " << m_projPoints.size() << endl;
+        cout << "m_prevPoints size = " << m_prevPoints.size() << endl;
+
+        //m_prevPoints and m_projPoint should hold all 3 vertex pairs.
+        cout << "Previous Point " << i << ": " << m_prevPoints[i].x << ", " << m_prevPoints[i].y << ", "
+             << m_prevPoints[i].z << endl;
+        cout << "Previous Projected Point " << i << ": " << m_projPoints[i].x << ", " << m_projPoints[i].y << ", "
+             << m_projPoints[i].z << endl;
 
         //Get closest current point on the mesh
-        //to the point cached in the previous frame.
-        mesh.getClosestPoint(m_referencePoints[i], temp, MSpace::kWorld);
-        locations.push_back(temp);
+        //to the projected point cached in the previous frame.
+        mesh.getClosestPoint(m_projPoints[i], current, MSpace::kWorld);
+
+        cout << "Actual Current Point: " << current.x << ", " << current.y << ", " << current.z << endl;
+
+        projected = getProjectedPoint(i, &m_prevPoints[i], &current);
+
+        cout << "Projected Point " << i << ": " << projected.x << ", " << projected.y << ", "
+             << projected.z << endl;
 
         //Replace points.
-        m_referencePoints.erase(m_referencePoints.begin()+i);
-        m_referencePoints.emplace(m_referencePoints.begin()+i, temp);
+        m_prevPoints.erase(m_prevPoints.begin()+i);
+        m_prevPoints.emplace(m_prevPoints.begin()+i, current);
+        m_projPoints.erase(m_projPoints.begin()+i);
+        m_projPoints.emplace(m_projPoints.begin()+i, projected);
+        locations.push_back(current);
 
-        cout << "Temp Location: " << temp.x << ", " << temp.y << ", " << temp.z << endl;
+        vi++;
     }
+
+    return status;
+}
+
+MStatus JointRigAnimateCommand::setNextActualPoints()
+{
+    cout << "setNextActualPoint() has been called." << endl;
+    //Select the vertex pair by name.
+    MStatus status;
+    MDagPath node;
+    MObject component;
+    MSelectionList vertexPair;
+    MString vpArg;
+    vpArg.set(m_vpIndex + 1);
+    MString vpName = "vp" + vpArg;
+    m_animControl.setCurrentTime(m_nextFrame);
+    MGlobal::executeCommand("select " + vpName);
+    MGlobal::getActiveSelectionList(vertexPair);
+    unsigned i;
+
+    switch(m_vpIndex) {
+        case 0: i = 0;
+                break;
+        case 1: i = 2;
+                break;
+        case 2: i = 4;
+                break;
+    }
+
+    //Get the mesh.
+    vertexPair.getDagPath(0, node, component);
+    MFnMesh mesh(node, &status);
+
+    //Get the indices for the selected vertices so
+    //we can iterate through them.
+    MItMeshVertex vertIt(node, component, &status);
+
+    for (; !vertIt.isDone(); vertIt.next())
+    {
+        MPoint next;
+        int vid = vertIt.index(&status);
+        mesh.getPoint(vid, next, MSpace::kWorld);
+
+        //Push to m_projPoints for vertUpdateByClosest() to use.
+        if(m_currentFrame.value() > m_startFrame)
+        {
+            m_projPoints.erase(m_projPoints.begin()+i);
+            m_projPoints.emplace(m_projPoints.begin()+i, next);
+        }else {
+            m_projPoints.push_back(next);
+        }
+        cout << "\nNext Point " << i << ": " << m_projPoints[i].x << ", " << m_projPoints[i].y << ", "
+             << m_projPoints[i].z << endl;
+        i++;
+    }
+
+    //Time to go back to the present.
+    m_animControl.setCurrentTime(m_currentFrame);
+
     return status;
 }
 
 MStatus JointRigAnimateCommand::vertUpdateBySelection(std::vector<MPoint>& locations)
 {
+    cout << "\nvertUpdateBySelection() has been called." << endl;
     //Select the vertex pair by name.
     MStatus status;
-    int vid;
     MDagPath node;
     MObject component;
     MSelectionList vertexPair;
@@ -182,19 +327,40 @@ MStatus JointRigAnimateCommand::vertUpdateBySelection(std::vector<MPoint>& locat
     //we can iterate through them.
     MItMeshVertex vertIt(node, component, &status);
 
+    unsigned i;
+
+    switch(m_vpIndex) {
+        case 0: i = 0;
+            break;
+        case 1: i = 2;
+            break;
+        case 2: i = 4;
+            break;
+    }
+
     for (; !vertIt.isDone(); vertIt.next())
     {
-        MPoint temp;
-        vid = vertIt.index(&status);
-        mesh.getPoint(vid, temp, MSpace::kWorld);
-        locations.push_back(temp);
+        MPoint current;
+        int vid = vertIt.index(&status);
+        mesh.getPoint(vid, current, MSpace::kWorld);
+        locations.push_back(current);
 
-        //Push to m_referencePoints for vertUpdateByClosest() to use.
-        m_referencePoints.push_back(temp);
+        //Push to m_prevPoints for vertUpdateByClosest() to use.
+        if(m_currentFrame.value() > m_startFrame)
+        {
+            setVelocity(&m_prevPoints[i], &current);
+            m_prevPoints.erase(m_prevPoints.begin()+i);
+            m_prevPoints.emplace(m_prevPoints.begin()+i, current);
+        }else {
+            m_prevPoints.push_back(current);
+        }
 
         cout << "Vertex ID: " << vid << endl;
-        cout << "Location: " << temp.x << ", " << temp.y << ", " << temp.z << endl;
+        cout << "New Location: " << current.x << ", " << current.y << ", " << current.z << endl;
+        i++;
     }
+
+    setNextActualPoints();
     return status;
 }
 
@@ -202,10 +368,27 @@ MVector JointRigAnimateCommand::centroid()
 {
     MStatus status;
     MVector centroid;
+    MTime thirdFrame((double) m_startFrame + 2.0);
+    cout << "m_currentFrame = " << m_currentFrame.value() << ", thirdFrame = " << thirdFrame.value() << endl;
+    if(isNewMesh)
+        cout << "isNewMesh" << endl;
+    else
+        cout << "!isNewMesh" << endl;
+
+    if(isNewMeshNext)
+        cout << "isNewMeshNext" << endl;
+    else
+        cout << "!isNewMeshNext" << endl;
 
     //Holds one vertex pair at a time.
     std::vector <MPoint> locations;
 
+    if(m_currentFrame < thirdFrame)
+        vertUpdateBySelection(locations);
+    else
+        vertUpdateByClosest(locations);
+
+    /*
     //Update the vertex pair locations.
     if(isNewMesh && !isNewMeshNext)
         vertUpdateByClosest(locations);
@@ -218,31 +401,17 @@ MVector JointRigAnimateCommand::centroid()
 
     if(!isNewMesh && !isNewMeshNext)
     {
-        if(m_currentFrame == 1)
+        if(m_currentFrame == firstFrame)
             vertUpdateBySelection(locations);
         else
             vertUpdateByClosest(locations);
     }
+    */
 
-    //Calculate x value of centroid.
-    if(locations[0].x < locations[1].x)
-        centroid.x = locations[0].x + (abs(locations[1].x - locations[0].x) / 2);
-    else
-        centroid.x = locations[0].x - (abs(locations[0].x - locations[1].x) / 2);
-
-    //Calculate y value of centroid.
-    if(locations[0].y < locations[1].y)
-        centroid.y = locations[0].y + (abs(locations[1].y - locations[0].y) / 2);
-    else
-        centroid.y = locations[0].y - (abs(locations[0].y - locations[1].y) / 2);
-
-    //Calculate z value of centroid.
-    if(locations[0].z < locations[1].z)
-        centroid.z = locations[0].z + (abs(locations[1].z - locations[0].z) / 2);
-    else
-        centroid.z = locations[0].z - (abs(locations[0].z - locations[1].z) / 2);
+    centroid = (locations[0] + locations[1]) / 2;
 
     cout << "Centroid : (" << centroid.x << ", " << centroid.y << ", " << centroid.z << ")" << endl;
+
 
     //Clear locations for next vertex pair.
     locations.pop_back();
@@ -280,21 +449,20 @@ MStatus JointRigAnimateCommand::meshBufferOps(unsigned i)
     MStatus status;
     MDagPath node;
     MObject component;
-    MTime prevFrame((double)i-1);
-    MTime currentFrame((double)i);
-    MTime nextFrame((double)i+1);
+    m_prevFrame.setValue((double)i-1);
+    m_currentFrame.setValue((double)i);
+    m_nextFrame.setValue((double)i+1);
 
     //Used in centroid to update vertices
     //by selection on first frame.
-    m_currentFrame = i;
 
     if(i > 1)
-        m_prevMeshVertices = getMeshVertices(prevFrame);
+        m_prevMeshVertices = getMeshVertices(m_prevFrame);
 
-    m_currentMeshVertices = getMeshVertices(currentFrame);
-    m_nextMeshVertices = getMeshVertices(nextFrame);
+    m_currentMeshVertices = getMeshVertices(m_currentFrame);
+    m_nextMeshVertices = getMeshVertices(m_nextFrame);
 
-    m_animControl.setCurrentTime(currentFrame);
+    m_animControl.setCurrentTime(m_currentFrame);
     cout << "\n---------\n";
     cout << "Frame: " << m_animControl.currentTime() << "\n";
     cout << "---------\n";
@@ -315,7 +483,7 @@ MStatus JointRigAnimateCommand::doIt(const MArgList& args)
 
     if(!locGroup.isEmpty())
     {
-        for(unsigned i = /*m_startFrame*/1; i < 20/*m_endFrame+1*/; i++)
+        for(unsigned i = m_startFrame; i < m_endFrame; i++)
         {
             meshBufferOps(i);
 
@@ -343,12 +511,12 @@ MStatus JointRigAnimateCommand::doIt(const MArgList& args)
                 //Get current location of the joint
                 MVector translation = location.getTranslation(MSpace::kWorld);
                 cout << "Joint " << j+1 << "'s old location is (" << translation.x << " x, "
-                     << translation.y << " y, " << translation.z << " z) \n";
+                     << translation.y << " y, " << translation.z << " z) \n\n";
 
                 //Set new location
                 location.setTranslation(centroid(), MSpace::kWorld);
                 MVector newTranslation = location.getTranslation(MSpace::kWorld);
-                cout << "Joint " << j+1 << "'s new location is (" << newTranslation.x << " x, "
+                cout << "\nJoint " << j+1 << "'s new location is (" << newTranslation.x << " x, "
                      << newTranslation.y << " y, " << newTranslation.z << " z) \n";
             }
 
