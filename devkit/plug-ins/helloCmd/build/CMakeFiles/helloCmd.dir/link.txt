@@ -1,1 +1,0 @@
-/Library/Developer/CommandLineTools/usr/bin/c++ -Os -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX10.14.sdk -dynamiclib -Wl,-headerpad_max_install_names  -o helloCmd.bundle -install_name @rpath/helloCmd.bundle CMakeFiles/helloCmd.dir/helloCmd.cpp.o /Users/derekroberts/devkitBase/lib/libOpenMaya.dylib /Users/derekroberts/devkitBase/lib/libFoundation.dylib 
