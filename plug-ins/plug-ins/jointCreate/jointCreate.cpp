@@ -38,8 +38,8 @@ class jointCreateCommand: public MPxCommand
         const char *kLengthLongFlag = "-length";
         unsigned int m_length = 3;
         unsigned int m_defaultLength = 3;
-        int m_jointOrientation = 20;
-        unsigned int m_jointDistance = 5;
+        double m_jointOrientation = 20;
+        double m_jointDistance = 0.2;
         MDagModifier m_dagModifier;
         std::vector<MObject> m_jointObjects;
 };
@@ -63,12 +63,14 @@ MStatus jointCreateCommand::undoIt()
 
 MStatus jointCreateCommand::parseArgs(const MArgList& args)
 {
+     //Get args from Maya command window
     MStatus status;
     MArgParser argData(cmdSyntax(), args, &status);
     unsigned int flagValue;
 
     if(args.asString(0) == "-l")
     {
+        //Take user argument and store it as m_length
         flagValue = args.asInt(1);
         if(flagValue > m_defaultLength)
             m_length = flagValue;
@@ -86,6 +88,7 @@ MStatus jointCreateCommand::doIt(const MArgList &args)
     for(unsigned int i = 0; i < m_length; i++)
     {
         if(i == 0) {
+            //First joint has no parent "MObject::kNullObj"
             MObject newJointObj = m_dagModifier.createNode("joint", MObject::kNullObj, &status);
             m_jointObjects.push_back(newJointObj);
         }
