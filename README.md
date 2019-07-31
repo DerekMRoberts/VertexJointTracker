@@ -4,7 +4,7 @@
 
 This is a Maya plug-in project attempting to take volumetric motion capture data captured from a state of the art 4DViews capture system and use vertices from the animated mesh surface data to derive sub-surface joint motion from it. 
 
-[Here](https://www.youtube.com/watch?v=LKGk5IK103o) is a demonstration video.
+[Here](https://www.youtube.com/watch?v=LKGk5IK103o) is a demonstration video to introduce you to the project.
 
 ## Getting Started
 
@@ -46,7 +46,7 @@ There is a plethora of documentation for Maya and it's API. Most of this informa
   `$DEVKIT_LOCATION/plug-ins/plug-ins`
   
 - ***Loading in Maya***
-  - [Loading](https://help.autodesk.com/view/MAYAUL/2019/ENU/?guid=Maya_SDK_MERGED_Loading_Samples_Plug_ins_Into_Maya_html)
+  - [Loading Plug-in](https://help.autodesk.com/view/MAYAUL/2019/ENU/?guid=Maya_SDK_MERGED_Loading_Samples_Plug_ins_Into_Maya_html)
   
   In our particular case, we manually load the plug-in after it's built from the build directory located at: 
   
@@ -61,7 +61,7 @@ There is a plethora of documentation for Maya and it's API. Most of this informa
 
   Make sure that the right interpreter is selected. It should say "MEL" next to it. The command window interpreter can also be switched to Python.
   
-## Understanding Basic Maya Command Plug-in Structure
+## Understanding Maya Command Plug-in Structure
 - [Command Plug-in Overview](https://help.autodesk.com/view/MAYAUL/2019/ENU/?guid=Maya_SDK_MERGED_Command_plug_ins_html)
 
 This should help you understand functions such as `initializePlugin()`, `uninitializePlugin()`, `cmdSyntax()`, `parseArgs`, `creator()` as well as some other Maya plug-in essential knowledge.
