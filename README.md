@@ -2,7 +2,9 @@
 
 **Welcome to the Repo!**
 
-This is a Maya plug-in project attempting to take volumetric motion capture data captured from a state of the art 4DViews capture system (imported it into Maya as an Alembic file), and use vertices from the animated mesh surface data to derive sub-surface joint motion from it. 
+This is a Maya plug-in project attempting to take volumetric motion capture data captured from a state of the art 4DViews capture system and use vertices from the animated mesh surface data to derive sub-surface joint motion from it. 
+
+[Here](https://www.youtube.com/watch?v=LKGk5IK103o) is a demonstration video.
 
 ## Getting Started
 
@@ -13,7 +15,7 @@ There is a plethora of documentation for Maya and it's API. Most of this informa
   For this project, we are using the *Maya 2019.1 Update* version with a student license.
   https://www.autodesk.com/education/free-software/maya
   
-  You will need to create an account with your student e-mail in order to get a student license if you don't already have a license.
+  You will need to create an account with your school e-mail in order to get a student license if you don't already have a license.
 - ***Download the Devkit:***
   - [Windows 64-Bit](https://s3-us-west-2.amazonaws.com/autodesk-adn-transfer/ADN+Extranet/M%26E/Maya/devkit+2019/Autodesk_Maya_2019_1_Update_DEVKIT_Windows.zip)
   - [Linux](https://s3-us-west-2.amazonaws.com/autodesk-adn-transfer/ADN+Extranet/M%26E/Maya/devkit+2019/Autodesk_Maya_2019_1_Update_DEVKIT_Linux.tgz)
