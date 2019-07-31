@@ -88,10 +88,6 @@ Ideally, unit tests should be created, but I didn't get around to it as I spent 
 - limbLocalAngle is a branch that features one plug-in:
   
     `limbLocalAngle` - This plug-in takes locators place along a limb in order and calculates the local angle on the middle joint based on trigonometry.
-    
-- animMeshData is a branch that features one plug-in:
-
-    `animMeshData` - This plug-in finds the number of polygons in the mesh each frame, finds the lowest poly count mesh, the highest poly count mesh, and the average poly count throughout the sequence.
 
 ## Built With
 - [CMake](https://cmake.org/) - Build System
